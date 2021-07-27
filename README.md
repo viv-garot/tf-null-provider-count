@@ -10,7 +10,7 @@ If unfamiliar with the null_provider, check this [other repo](https://github.com
 ## Pre-requirements
 
 * [AWS Account](https://aws.amazon.com/) and basical knowledge of [Terraform with AWS](https://learn.hashicorp.com/collections/terraform/aws-get-started)
-* [Git installed](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+* [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed
 
 ## How to use this repo
 
