@@ -49,10 +49,6 @@ resource "null_resource" "null" {
     provisioner "local-exec" {
       command = "echo ami in one of two instances had changed. Server1 public_dns is: ${aws_instance.server1.public_dns}"
     }
-
-    provisioner "local-exec" {
-      command = "echo server1 public_dns: ${aws_instance.server1.public_dns}"
-    }
 }
 
 ```
