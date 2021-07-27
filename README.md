@@ -1,67 +1,10 @@
-# tf-null-provider
-This repo serves as an explanation and learning exercice for the null provider in Terraform
+# tf-null-provider-count
+This repo serves as a learning exercice for the null provider in Terraform. 
+To ilustrate its usage we'll leverage the count meta-argument and the count.index object attribute (If unfamiliar with count, check the official doc [here](https://www.terraform.io/docs/language/meta-arguments/count.html)
 
 ## Description of the Terraform null_provider
 
-The null provider ([official documentation](https://registry.terraform.io/providers/hashicorp/null/latest/docs))is a rather-unusual provider that has constructs that intentionally do nothing. 
-
-*Important note :*
- > Usage of the null provider can make a Terraform configuration harder to understand. While it can be useful in certain cases, it should be applied with care and other solutions preferred when available.
-
-The null provider consists of :
-* The **null_data_source** data source which implements the standard data source lifecycle but does not interact with any external APIs.
-Historically, the null_data_source was typically used to construct intermediate values to re-use elsewhere in configuration. The same is now achieved using [locals](https://www.terraform.io/docs/language/values/locals.html). _We'll not cover the __deprecated null_data_source__ in this repo._
-
-* The **null_resource** resource. Instances of null_resource are treated like normal resources, but they don't do anything.
-_The main advantage of this resource is the __ability to update or recreate other resources in response of a null_resource change__ via the triggers attribute._
-Triggers are a map of values, when changed, that will cause (the null resource to be replaced and) the set of associate provisioners to re-run
-
-Taking the below main.tf file example :
-
-```
-provider "aws" {
-    region     = "eu-central-1"
-}
-
-resource "aws_instance" "server1" {
-    ami           = "ami-05fa05752fc432eeb" # bionic64
-    #ami           = "ami-091d856a5f5701931" # nginx64
-    instance_type = "t2.micro"
-    tags = {
-        "Name" = "server1"
-    }
-}
-
-resource "aws_instance" "server2" {
-    ami           = "ami-05fa05752fc432eeb"
-    instance_type = "t2.micro"
-    tags = {
-        "Name" = "server2"
-    }
-}
-
-resource "null_resource" "null" {
-    triggers = {
-    # Changes to any ami instance requires re-provisioning of this null_resource
-        instance_ami_ids = "${join(",", [aws_instance.server1.ami, aws_instance.server2.ami])}"
-    }
-    
-    # As a result of re-creating the null_resource the provisioners are re-run
-    provisioner "local-exec" {
-      command = "echo ami in one of two instances had changed. Server1 public_dns is: ${aws_instance.server1.public_dns}"
-    }
-}
-
-```
-
-This terraform file creates :
-* 2 ubuntu aws instances
-* A null_resource resource which :
-  * Gather data of both instances and create a concatenated string of the ami ids via the join function within the triggers map to compare upon on next run
-  * Run a simple echo command via the local-exec provisioner 
-
-In this example after any change of ami id, due to the triggers map, the null_resource will be re-created and the provisioner will be re-run.
-Here the provisioner only runs an echo command and write the first instance public_dns to stdout but more powerfull actions can be configured.
+Check this [other repo](https://github.com/viv-garot/tf-null-provider) for a short explanation and an introductory example of the null_provider
 
 
 ## Repositery pre-requirements
@@ -79,13 +22,13 @@ Here the provisioner only runs an echo command and write the first instance publ
 ### Clone the repo
 
 ```
-git clone https://github.com/viv-garot/tf-null-provider
+git clone https://github.com/viv-garot/tf-null-provider-count
 ```
 
 ### Change directory
 
 ```
-cd tf-null-provider
+cd tf-null-provider-count
 ```
 
 ### Run
