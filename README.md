@@ -1,13 +1,13 @@
 # tf-null-provider-count
 This repo serves as a learning exercice for the null provider in Terraform. 
-To ilustrate its usage we'll leverage the count meta-argument and the count.index object attribute (If unfamiliar with count meta-argument, check the official doc [here](https://www.terraform.io/docs/language/meta-arguments/count.html))
+To ilustrate its usage we'll leverage the count meta-argument and the count.index object attribute (If unfamiliar with count meta-argument, check the official doc [here](https://www.terraform.io/docs/language/meta-arguments/count.html)) to create a couple of ec2 instance on AWS.
+Each instance has a null_ressouce definition associated that gather some details of the instance and populate them to a server_details.txt file locally via an exec-local provisioner
 
 ## Description of the Terraform null_provider
 
-Check this [other repo](https://github.com/viv-garot/tf-null-provider) for a short explanation and an introductory example of the null_provider
+If unfamiliar with the null_provider, check this [other repo](https://github.com/viv-garot/tf-null-provider) for a short explanation and an introductory example.
 
-
-## Repositery pre-requirements
+## Pre-requirements
 
 * [AWS Account](https://aws.amazon.com/) and basical knowledge of [Terraform with AWS](https://learn.hashicorp.com/collections/terraform/aws-get-started)
 * [Git installed](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
@@ -16,6 +16,7 @@ Check this [other repo](https://github.com/viv-garot/tf-null-provider) for a sho
 
 - Clone
 - Run
+- Cleanup
 
 ---
 
@@ -34,10 +35,14 @@ cd tf-null-provider-count
 ### Run
 
 
-* terraform init
+* Initialize Terraform
+
+```
+terraform init
+```
 
 
-Sample output
+_Sample output_
 
 ```
 terraform init
@@ -56,10 +61,14 @@ Initializing provider plugins...
 ```
 
 
-* terraform apply
+* Apply
+
+```
+terraform apply
+```
 
 
-Sample output
+_Sample output_
 
 ```
 terraform apply
@@ -69,12 +78,24 @@ Terraform used the selected providers to generate the following execution plan. 
 
 Terraform will perform the following actions:
 
-  # aws_instance.server1 will be created
-  + resource "aws_instance" "server1" {
+  # aws_instance.server[0] will be created
+  + resource "aws_instance" "server" {
+      + ami                                  = "ami-05fa05752fc432eeb"
+      + arn                                  = (known after apply)
   
   # ...
   
-  Plan: 3 to add, 0 to change, 0 to destroy.
+  # null_resource.null[0] will be created
+  + resource "null_resource" "null" {
+      + id = (known after apply)
+    }
+
+  # null_resource.null[1] will be created
+  + resource "null_resource" "null" {
+      + id = (known after apply)
+    }
+
+Plan: 4 to add, 0 to change, 0 to destroy.
 
 Do you want to perform these actions?
   Terraform will perform the actions described above.
@@ -84,117 +105,126 @@ Do you want to perform these actions?
   
   # ...
   
-aws_instance.server2: Creation complete after 33s [id=i-01c3152d8c0b2398d]
-aws_instance.server1: Still creating... [40s elapsed]
-aws_instance.server1: Creation complete after 43s [id=i-05333b856efacbabb]
-null_resource.null: Creating...
-null_resource.null: Provisioning with 'local-exec'...
-null_resource.null (local-exec): Executing: ["/bin/sh" "-c" "echo ami in one of two instances had changed. Server1 public_dns is: ec2-54-93-82-11.eu-central-1.compute.amazonaws.com"]
-null_resource.null (local-exec): ami in one of two instances had changed. Server1 public_dns is: ec2-54-93-82-11.eu-central-1.compute.amazonaws.com
-null_resource.null: Creation complete after 0s [id=5785853992195975830]
+aws_instance.server[0]: Creation complete after 29s [id=i-0104ec9535949ada0]
+aws_instance.server[1]: Creation complete after 29s [id=i-0322cb433cc9d0d25]
+null_resource.null[1]: Creating...
+null_resource.null[0]: Creating...
+null_resource.null[0]: Provisioning with 'local-exec'...
+null_resource.null[1]: Provisioning with 'local-exec'...
+null_resource.null[1] (local-exec): Executing: ["/bin/sh" "-c" "echo server1, ec2-3-125-120-241.eu-central-1.compute.amazonaws.com, 3.125.120.241 >> server_details.txt"]
+null_resource.null[0] (local-exec): Executing: ["/bin/sh" "-c" "echo server0, ec2-18-195-166-109.eu-central-1.compute.amazonaws.com, 18.195.166.109 >> server_details.txt"]
+null_resource.null[0]: Creation complete after 0s [id=5619555824120805796]
+null_resource.null[1]: Creation complete after 0s [id=1016730628362849792]
 
-Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+```
+
+* Confirm the server_details.txt file has been created locally
+
+```
+cat server_details.txt
+```
+
+_Sample output_
+
+```
+cat server_details.txt
+server0, ec2-18-195-166-109.eu-central-1.compute.amazonaws.com, 18.195.166.109
+server1, ec2-3-125-120-241.eu-central-1.compute.amazonaws.com, 3.125.120.241
 ```
 
 
-* Edit the main.tf file and change tags Name for server1 instance
+* Let's create an additional instance and observe how a new null resource is also created.
+For this, run
 
 ```
- -         "Name" = "server1"
- +         "Name" = "web1"
+terraform apply -var aws_instance_number=3
 ```
 
-
-* Run terraform apply again and note that the null resource is not re-created and the provisioner not re-run
-
-Sample output :
+_Sample output_
 
 ```
-terraform apply
-aws_instance.server1: Refreshing state... [id=i-05333b856efacbabb]
-aws_instance.server2: Refreshing state... [id=i-01c3152d8c0b2398d]
-null_resource.null: Refreshing state... [id=5785853992195975830]
+terraform apply -var aws_instance_number=3
+aws_instance.server[1]: Refreshing state... [id=i-0322cb433cc9d0d25]
+aws_instance.server[0]: Refreshing state... [id=i-0104ec9535949ada0]
+null_resource.null[0]: Refreshing state... [id=5619555824120805796]
+null_resource.null[1]: Refreshing state... [id=1016730628362849792]
 
 Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
-  ~ update in-place
+  + create
 
 Terraform will perform the following actions:
 
-  # aws_instance.server1 will be updated in-place
-  ~ resource "aws_instance" "server1" {
-        id                                   = "i-05333b856efacbabb"
-      ~ tags                                 = {
-          ~ "Name" = "server1" -> "web1"
-        }
-      ~ tags_all                             = {
-          ~ "Name" = "server1" -> "web1"
-        }
-        # (27 unchanged attributes hidden)
-        # (5 unchanged blocks hidden)
-    }
-
-Plan: 0 to add, 1 to change, 0 to destroy.
-
-Do you want to perform these actions?
-  Terraform will perform the actions described above.
-  Only 'yes' will be accepted to approve.
-
-  Enter a value: yes
-
-aws_instance.server1: Modifying... [id=i-05333b856efacbabb]
-aws_instance.server1: Modifications complete after 8s [id=i-05333b856efacbabb]
-
-Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
-```
-
-
-* Edit the main.tf file again and update the server1 instance ami id (comment line 6 and uncomment line 7)
-
-```
-<     #ami           = "ami-05fa05752fc432eeb" # bionic64
-<     ami           = "ami-091d856a5f5701931" # nginx64
----
->     ami           = "ami-05fa05752fc432eeb" # bionic64
->     #ami           = "ami-091d856a5f5701931" # nginx64
-```
-
-
-* Run terraform apply again. 
-
-```
-terraform apply
-
+  # aws_instance.server[2] will be created
+  
 # ...
 
-  # null_resource.null must be replaced
--/+ resource "null_resource" "null" {
-      ~ id       = "5785853992195975830" -> (known after apply)
-      ~ triggers = { # forces replacement
-          ~ "instance_ami_ids" = "ami-05fa05752fc432eeb,ami-05fa05752fc432eeb" -> "ami-091d856a5f5701931,ami-05fa05752fc432eeb"
-        }
+  # null_resource.null[2] will be created
+  + resource "null_resource" "null" {
+      + id = (known after apply)
     }
 
-Plan: 2 to add, 0 to change, 2 to destroy.
+Plan: 2 to add, 0 to change, 0 to destroy.
+```
 
-Do you want to perform these actions?
-  Terraform will perform the actions described above.
-  Only 'yes' will be accepted to approve.
 
-  Enter a value: yes
-  
- # ...
- 
- 
-aws_instance.server1: Creation complete after 33s [id=i-01099feb130304663]
-null_resource.null: Creating...
-null_resource.null: Provisioning with 'local-exec'...
-null_resource.null (local-exec): Executing: ["/bin/sh" "-c" "echo ami in one of two instances had changed. Server1 public_dns is: ec2-52-29-81-83.eu-central-1.compute.amazonaws.com"]
-null_resource.null (local-exec): ami in one of two instances had changed. Server1 public_dns is: ec2-52-29-81-83.eu-central-1.compute.amazonaws.com
-null_resource.null: Creation complete after 0s [id=8299250783441160820]
+* Confirm the server_details.txt file has also been updated
 
-Apply complete! Resources: 2 added, 0 changed, 2 destroyed.
+_Sample output_ :
+
+```
+cat server_details.txt
+server0, ec2-18-195-166-109.eu-central-1.compute.amazonaws.com, 18.195.166.109
+server1, ec2-3-125-120-241.eu-central-1.compute.amazonaws.com, 3.125.120.241
+server2, ec2-3-120-207-94.eu-central-1.compute.amazonaws.com, 3.120.207.94
  
 ``` 
 
 
-* Note how this time the null resource is re-created and as a result the provisioner is also re-run
+
+### Cleanup
+
+* Run terraform destroy to delete the created ec2 instances
+
+```
+terraform destroy
+```
+
+_Sample output_
+
+```
+# ...
+
+Plan: 0 to add, 0 to change, 6 to destroy.
+
+Do you really want to destroy all resources?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only 'yes' will be accepted to confirm.
+
+  Enter a value: yes
+  
+null_resource.null[2]: Destroying... [id=3713468872934538695]
+null_resource.null[0]: Destroying... [id=5619555824120805796]
+null_resource.null[1]: Destroying... [id=1016730628362849792]
+null_resource.null[0]: Destruction complete after 0s
+null_resource.null[2]: Destruction complete after 0s
+null_resource.null[1]: Destruction complete after 0s
+aws_instance.server[0]: Destroying... [id=i-0104ec9535949ada0]
+aws_instance.server[1]: Destroying... [id=i-0322cb433cc9d0d25]
+aws_instance.server[2]: Destroying... [id=i-00d63ecfe6098deb4]
+aws_instance.server[0]: Still destroying... [id=i-0104ec9535949ada0, 10s elapsed]
+aws_instance.server[2]: Still destroying... [id=i-00d63ecfe6098deb4, 10s elapsed]
+aws_instance.server[1]: Still destroying... [id=i-0322cb433cc9d0d25, 10s elapsed]
+aws_instance.server[1]: Still destroying... [id=i-0322cb433cc9d0d25, 20s elapsed]
+aws_instance.server[0]: Still destroying... [id=i-0104ec9535949ada0, 20s elapsed]
+aws_instance.server[2]: Still destroying... [id=i-00d63ecfe6098deb4, 20s elapsed]
+aws_instance.server[0]: Still destroying... [id=i-0104ec9535949ada0, 30s elapsed]
+aws_instance.server[1]: Still destroying... [id=i-0322cb433cc9d0d25, 30s elapsed]
+aws_instance.server[2]: Still destroying... [id=i-00d63ecfe6098deb4, 30s elapsed]
+aws_instance.server[0]: Destruction complete after 34s
+aws_instance.server[1]: Destruction complete after 34s
+aws_instance.server[2]: Destruction complete after 34s
+
+Destroy complete! Resources: 6 destroyed.
+
+```
