@@ -1,6 +1,6 @@
 # tf-null-provider-count
 This repo serves as a learning exercice for the null provider in Terraform. 
-To ilustrate its usage we'll leverage the count meta-argument and the count.index object attribute (If unfamiliar with count, check the official doc [here](https://www.terraform.io/docs/language/meta-arguments/count.html)
+To ilustrate its usage we'll leverage the count meta-argument and the count.index object attribute (If unfamiliar with count meta-argument, check the official doc [here](https://www.terraform.io/docs/language/meta-arguments/count.html))
 
 ## Description of the Terraform null_provider
 
